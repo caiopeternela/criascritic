@@ -1,15 +1,36 @@
+import notion_df
 import pandas as pd
 import streamlit as st
 
-data_df = pd.read_csv("criascritic.csv", usecols=list(range(8)))
-
-grouped_data_df = data_df.groupby("Nome do Jogo").mean().reset_index()
-
-grouped_data_df["Reviews"] = data_df.groupby("Nome do Jogo").size().values
-
-grouped_data_df = grouped_data_df.sort_values("Reviews", ascending=False)
-
 st.set_page_config(page_title="Criascritic", page_icon="🍷", layout="wide")
+
+
+@st.cache_data(ttl=3600)
+def load_dataframe_from_notion_database():
+    notion_df.pandas()
+    df = notion_df.download(
+        st.secrets["NOTION_DATABASE_URL"],
+        api_key=st.secrets["NOTION_INTEGRATION_TOKEN"],
+    )
+    data_df = df.filter(
+        items=[
+            "Nome do Jogo",
+            "Nota Pessoal",
+            "Nota Técnica",
+            "História",
+            "Gameplay",
+            "Direção de Arte",
+            "Técnico",
+        ]
+    )
+    grouped_data_df = data_df.groupby("Nome do Jogo").mean().reset_index()
+    grouped_data_df["Reviews"] = data_df.groupby("Nome do Jogo").size().values
+    grouped_data_df = grouped_data_df.sort_values("Reviews", ascending=False)
+
+    return grouped_data_df
+
+
+grouped_data_df = load_dataframe_from_notion_database()
 
 st.title("Criascritic 🍷")
 
@@ -60,30 +81,10 @@ st.dataframe(
             help="Quantas horas possui no jogo",
             format="%d",
         ),
-        # "Zerado": st.column_config.CheckboxColumn(
-        #     help="Se o cria zerou o jogo",
-        # ),
-        # "Platinado": st.column_config.CheckboxColumn(
-        #     help="Se o cria platinou o jogo",
-        # ),
-        # "Dropado": st.column_config.CheckboxColumn(
-        #     help="Se o cria dropou o jogo",
-        # ),
-        # "Genêros": st.column_config.ListColumn(
-        #     label="Gêneros",
-        #     help="Gêneros do jogo",
-        # ),
-        # "Plataforma": st.column_config.TextColumn(
-        #     help="Plataforma em que o cria jogou",
-        # ),
         "Reviews": st.column_config.TextColumn(
             label="Reviews",
             help="Quantidade de reviews do jogo",
         ),
-        # "Criado em": st.column_config.DatetimeColumn(
-        #     help="Data e hora de criação da avaliação",
-        #     format="D/MM/YYYY, HH:mm"
-        # ),
     },
     height=700,
     hide_index=True,
