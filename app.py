@@ -2,8 +2,6 @@ import notion_df
 import pandas as pd
 import streamlit as st
 
-st.set_page_config(page_title="Criascritic", page_icon="🍷", layout="wide")
-
 
 @st.cache_data(ttl=3600)
 def load_dataframe_from_notion_database():
@@ -30,12 +28,12 @@ def load_dataframe_from_notion_database():
     return grouped_data_df
 
 
-grouped_data_df = load_dataframe_from_notion_database()
+st.set_page_config(page_title="Criascritic", page_icon="🍷", layout="wide")
 
 st.title("Criascritic 🍷")
 
 st.dataframe(
-    grouped_data_df,
+    load_dataframe_from_notion_database(),
     column_config={
         "Nome do Jogo": st.column_config.TextColumn(
             help="Nota do Jogo", width="medium"
