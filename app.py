@@ -1,9 +1,9 @@
 import notion_df
-import pandas as pd
 import streamlit as st
+from crias_ai import get_response_from_prompt
 
 
-@st.cache_data(ttl=3600)
+@st.cache_data(ttl="2h")
 def load_dataframe_from_notion_database():
     notion_df.pandas()
     df = notion_df.download(
@@ -28,12 +28,22 @@ def load_dataframe_from_notion_database():
     return grouped_data_df
 
 
+grouped_data_df = load_dataframe_from_notion_database()
+
 st.set_page_config(page_title="Criascritic", page_icon="🍷", layout="wide")
 
 st.title("Criascritic 🍷")
 
+with st.sidebar:
+    st.title("CriasAI")
+    if prompt := st.chat_input("Qual a franquia melhor avaliada?"):
+        messages = st.container(height=500)
+        messages.chat_message("human").write(prompt)
+        response = get_response_from_prompt(prompt, grouped_data_df)
+        messages.chat_message("ai").write(response)
+
 st.dataframe(
-    load_dataframe_from_notion_database(),
+    grouped_data_df,
     column_config={
         "Nome do Jogo": st.column_config.TextColumn(
             help="Nota do Jogo", width="medium"
