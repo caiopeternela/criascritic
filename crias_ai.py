@@ -1,42 +1,17 @@
 import pandas as pd
-from langchain.output_parsers import PydanticOutputParser
-from langchain_core.pydantic_v1 import BaseModel, Field, validator
-from langchain_experimental.agents.agent_toolkits import create_pandas_dataframe_agent
-from langchain_openai import ChatOpenAI
+from pandasai.llm import OpenAI
+from pandasai import SmartDataframe
 
-class Question(BaseModel):
-    prompt: str
-    answer: str
 
-    @validator("prompt")
-    def prompt_must_be_question(cls, v):
-        if not v.endswith("?"):
-            raise ValueError("Prompt must be a question")
-        return v
-
-def get_response_from_prompt(prompt: str, df: pd.DataFrame):
-    llm = ChatOpenAI(
+def get_response_from_prompt(openai_api_token: str, prompt: str, df: pd.DataFrame):
+    llm = OpenAI(
         temperature=0,
+        api_token=openai_api_token,
         model="gpt-3.5-turbo-0125",
-        openai_api_key="",
-        streaming=True,
     )
-    pandas_df_agent = create_pandas_dataframe_agent(
-        llm,
+    smart_df = SmartDataframe(
         df,
-        verbose=True,
-        # agent_type=AgentType.OPENAI_FUNCTIONS,
-        handle_parsing_errors=True,
+        description="A dataframe with a collection of game reviews by a group of friends (crias)",
+        config={"llm": llm, "verbose": True},
     )
-
-    parser = PydanticOutputParser(pydantic_object=Question)
-
-    new_prompt = PromptTemplate(
-        template="Answer the user query.\n{format_instructions}\n{query}\n",
-        input_variables=["query"],
-        partial_variables={"format_instructions": parser.get_format_instructions()},
-    )
-
-    chain = new_prompt | pandas_df_agent | parser
-
-    return chain.invoke({"query": prompt})
+    return smart_df.chat(prompt + " responda em português brasileiro")

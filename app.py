@@ -2,6 +2,8 @@ import notion_df
 import streamlit as st
 from crias_ai import get_response_from_prompt
 
+st.set_page_config(page_title="Criascritic", page_icon="🍷", layout="wide")
+
 
 @st.cache_data(ttl="2h")
 def load_dataframe_from_notion_database():
@@ -30,8 +32,6 @@ def load_dataframe_from_notion_database():
 
 grouped_data_df = load_dataframe_from_notion_database()
 
-st.set_page_config(page_title="Criascritic", page_icon="🍷", layout="wide")
-
 st.title("Criascritic 🍷")
 
 with st.sidebar:
@@ -39,7 +39,9 @@ with st.sidebar:
     if prompt := st.chat_input("Qual a franquia melhor avaliada?"):
         messages = st.container(height=500)
         messages.chat_message("human").write(prompt)
-        response = get_response_from_prompt(prompt, grouped_data_df)
+        response = get_response_from_prompt(
+            st.secrets["OPENAI_API_TOKEN"], prompt, grouped_data_df
+        )
         messages.chat_message("ai").write(response)
 
 st.dataframe(
